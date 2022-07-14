@@ -26,8 +26,8 @@
 #if defined(UNICODE)
 
 #	define kServiceParametersSoftware			L"SOFTWARE"
-#	define kServiceParametersNode				L"SOFTWARE\\ETC\\DNS-SD"
-#	define kServiceName							L"ETC DNS-SD Service"
+#	define kServiceParametersNode				L"SOFTWARE\\PRISM\\DNS-SD"
+#	define kServiceName							L"PRISM DNS-SD Service"
 #	define kServiceDynDNSBrowseDomains			L"BrowseDomains"
 #	define kServiceDynDNSHostNames				L"HostNames"
 #	define kServiceDynDNSRegistrationDomains	L"RegistrationDomains"
@@ -42,8 +42,8 @@
 # else
 
 #	define kServiceParametersSoftware			"SOFTWARE"
-#	define kServiceParametersNode				"SOFTWARE\\ETC\\DNS-SD"
-#	define kServiceName							"ETC DNS-SD Service"
+#	define kServiceParametersNode				"SOFTWARE\\PRISM\\DNS-SD"
+#	define kServiceName							"PRISM DNS-SD Service"
 #	define kServiceDynDNSBrowseDomains			"BrowseDomains"
 #	define kServiceDynDNSHostNames				"HostNames"
 #	define kServiceDynDNSRegistrationDomains	"RegistrationDomains"
