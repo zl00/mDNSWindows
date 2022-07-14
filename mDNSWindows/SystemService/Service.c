@@ -100,6 +100,7 @@ static void				Usage( void );
 static BOOL WINAPI		ConsoleControlHandler( DWORD inControlEvent );
 static OSStatus			InstallService( LPCTSTR inName, LPCTSTR inDisplayName, LPCTSTR inDescription, LPCTSTR inPath );
 static OSStatus			RemoveService( LPCTSTR inName );
+static OSStatus			RestartService(LPCTSTR inName);
 static OSStatus			SetServiceParameters();
 static OSStatus			GetServiceParameters();
 static OSStatus			CheckFirewall();
@@ -304,6 +305,15 @@ int	Main( int argc, LPTSTR argv[] )
 			err = 0;
 			break;
 		}
+		else if ((StrCmp(argv[i], TEXT("-restartservice")) == 0) ) // Start service
+		{
+			err = RestartService(kServiceName);
+			if (err)
+			{
+				ReportStatus(EVENTLOG_ERROR_TYPE, "start service failed (%d)\n", err);
+				goto exit;
+			}
+		}
 		else
 		{
 			Usage();
@@ -506,6 +516,72 @@ exit:
 	return( err );
 }
 
+
+//===========================================================================================================================
+//	RestartService
+//===========================================================================================================================
+
+static OSStatus	RestartService(LPCTSTR inName)
+{
+	OSStatus			err;
+	SC_HANDLE			scm;
+	SC_HANDLE			service;
+	BOOL				ok;
+	SERVICE_STATUS		status;
+
+	scm = NULL;
+	service = NULL;
+
+	// Open a connection to the service.
+
+	scm = OpenSCManager(0, 0, SC_MANAGER_ALL_ACCESS);
+	err = translate_errno(scm, (OSStatus)GetLastError(), kOpenErr);
+	require_noerr(err, exit);
+
+	service = OpenService(scm, inName, SERVICE_START | SERVICE_QUERY_STATUS);
+	err = translate_errno(service, (OSStatus)GetLastError(), kNotFoundErr);
+	require_noerr(err, exit);
+
+	// Stop the service, if it is not already stopped, then delete it.
+
+	ok = QueryServiceStatus(service, &status);
+	err = translate_errno(ok, (OSStatus)GetLastError(), kAuthenticationErr);
+	require_noerr(err, exit);
+
+	switch (status.dwCurrentState)
+	{
+	case SERVICE_START_PENDING:
+	case SERVICE_STOP_PENDING:
+	case SERVICE_CONTINUE_PENDING:
+	case SERVICE_PAUSE_PENDING:
+	case SERVICE_PAUSED:
+	case SERVICE_RUNNING:
+		ok = ControlService(service, SERVICE_CONTROL_STOP, &status);
+		check_translated_errno(ok, (OSStatus)GetLastError(), kAuthenticationErr);
+		break;
+
+	default:
+		break;
+	}
+
+	ok = StartService( service, 0, NULL );
+	err = translate_errno( ok, (OSStatus) GetLastError(), kInUseErr );
+	require_noerr( err, exit );
+
+	ReportStatus(EVENTLOG_SUCCESS, "Restarted service\n");
+	err = ERROR_SUCCESS;
+
+exit:
+	if (service)
+	{
+		CloseServiceHandle(service);
+	}
+	if (scm)
+	{
+		CloseServiceHandle(scm);
+	}
+	return(err);
+}
 
 
 //===========================================================================================================================
